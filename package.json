@@ -1,0 +1,20 @@
+{
+  "name": "playlab-product-ops-engine",
+  "version": "1.0.0",
+  "description": "Autonomous Product Operations & Jira Intelligence Harness tailored for Playlab",
+  "main": "src/jira-client.js",
+  "scripts": {
+    "triage": "node src/triage-runner.js",
+    "briefing": "node src/briefing-runner.js"
+  },
+  "keywords": [
+    "product-operations",
+    "jira-automation",
+    "ai-triage",
+    "mcp",
+    "playlab",
+    "edtech"
+  ],
+  "author": "John DeVito",
+  "license": "MIT"
+}

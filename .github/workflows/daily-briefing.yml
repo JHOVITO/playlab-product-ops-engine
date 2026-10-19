@@ -1,0 +1,35 @@
+name: 5:00 AM Daily Operations Briefing Runner
+
+on:
+  schedule:
+    # 5:00 AM Central Time (10:00 AM UTC) Monday through Friday
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  run-briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Execute Daily Board Sweep & Intelligence Generation
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY || 'KAN' }}
+        run: |
+          node src/briefing-runner.js
+
+      - name: Upload Briefing Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: morning-executive-briefing
+          path: templates/morning_briefing.html
+          retention-days: 7
