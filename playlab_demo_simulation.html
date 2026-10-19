@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playlab Operations — Interactive Product Simulation</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.4); }
+    }
+    .glow-card { animation: pulse-glow 3s infinite ease-in-out; }
+    .fade-enter { opacity: 0; transform: translateY(8px); transition: all 0.35s ease-out; }
+    .fade-active { opacity: 1; transform: translateY(0); }
+    .progress-bar-fill { transition: width 0.1s linear; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col items-center justify-center font-sans antialiased">
+
+  <div class="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 flex flex-col gap-6">
+    
+    <!-- Top Header & Controls -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+            LIVE SIMULATION
+          </span>
+          <span class="text-xs text-slate-400">Playlab Product Operations Flow</span>
+        </div>
+        <h1 class="text-2xl font-bold text-white mt-1">The Architect on the Way In, Inspector on the Way Out</h1>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="flex items-center gap-3">
+        <button id="prevBtn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium transition text-slate-300">
+          ◀ Prev
+        </button>
+        <button id="playPauseBtn" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-sm font-semibold text-white shadow-lg shadow-sky-600/30 transition flex items-center gap-2">
+          <span id="playIcon">⏸</span> <span id="playText">Pause Auto-Play</span>
+        </button>
+        <button id="nextBtn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium transition text-slate-300">
+          Next ▶
+        </button>
+      </div>
+    </div>
+
+    <!-- Stepper Navigation -->
+    <div class="flex flex-col gap-2">
+      <div class="grid grid-cols-6 gap-2" id="stepperContainer">
+        <!-- Generated via JS -->
+      </div>
+      <!-- Auto-Play Progress Bar -->
+      <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+        <div id="progressBar" class="bg-sky-500 h-full w-0 progress-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Main Visual Stage (Simulated UI) -->
+    <div id="stageContainer" class="bg-slate-950 border border-slate-800/80 rounded-xl p-6 min-h-[360px] flex flex-col justify-center glow-card transition-all duration-300">
+      <!-- Dynamic Step Content -->
+    </div>
+
+    <!-- Presenter Notes & Teleprompter for John -->
+    <div class="bg-slate-800/60 border-l-4 border-sky-500 rounded-r-xl p-4 flex flex-col gap-1.5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-sky-400">🎙️ What to Say During This Step (Speaker Notes):</span>
+        <span class="text-xs text-slate-500" id="stepCounter">Step 1 of 6</span>
+      </div>
+      <p id="speakerNotes" class="text-sm md:text-base text-slate-200 leading-relaxed font-normal">
+        <!-- Injected via JS -->
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    const steps = [
+      {
+        id: 1,
+        title: "1. Intake Influx",
+        subtitle: "Classroom Bug",
+        badge: "Raw Feedback",
+        badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+        render: () => `
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-amber-400">Incoming Educator Support Signal (Chicago Pilot)</span>
+              <span class="text-xs text-slate-400">8:14 AM CT</span>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg flex flex-col gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">👩‍🏫</span>
+                <span class="font-semibold text-slate-200">Maria R. — 8th Grade Science Lead</span>
+              </div>
+              <p class="text-slate-300 text-sm leading-relaxed bg-slate-950 p-3 rounded border border-slate-800/50">
+                "Help! I'm trying to generate personalized quizzes for my 32 students in 2nd period using the Quiz Builder. After clicking generate, the wheel just spins for about a minute and then gives an error. We are blocked right now."
+              </p>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+              <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+              <span>Raw unstructured signal detected • Routing to Product Operations Intake Pipeline...</span>
+            </div>
+          </div>
+        `,
+        speakerNotes: "When an educator in Chicago hits an error during live class hours, average teams forward a messy message to Slack and waste half the day. In my system, this raw signal enters our autonomous intake harness immediately."
+      },
+      {
+        id: 2,
+        title: "2. The Architect",
+        subtitle: "Autonomous Triage",
+        badge: "AI Diagnosis",
+        badgeColor: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+        render: () => `
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-sky-400">⚡ Operational Triage Engine Executing</span>
+              <span class="text-xs text-emerald-400 font-mono">Execution Latency: 1.2s</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                <div class="text-xs text-slate-400 uppercase font-semibold">Severity</div>
+                <div class="text-lg font-bold text-red-400 mt-1">🔴 P1 (Highest)</div>
+                <div class="text-xs text-slate-500 mt-0.5">Active classroom block</div>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                <div class="text-xs text-slate-400 uppercase font-semibold">Blast Radius</div>
+                <div class="text-lg font-bold text-amber-400 mt-1">Rosters > 30</div>
+                <div class="text-xs text-slate-500 mt-0.5">Isolated to batch uploads</div>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
+                <div class="text-xs text-slate-400 uppercase font-semibold">Root Cause</div>
+                <div class="text-lg font-bold text-sky-400 mt-1">45s Gateway Timeout</div>
+                <div class="text-xs text-slate-500 mt-0.5">Synchronous LLM worker call</div>
+              </div>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-lg text-xs font-mono text-slate-300">
+              <span class="text-sky-400">> Staging Solution:</span> Chunk class rosters into 15-student parallel batches in frontend worker.<br>
+              <span class="text-emerald-400">> Permanent Architecture:</span> Transition quiz generation to async Redis queue for Sprint 2.
+            </div>
+          </div>
+        `,
+        speakerNotes: "Here is where I act as the 'Architect on the way in.' Before an engineer even looks at it, the system extracts the 45-second timeout, calculates the blast radius, and provides two clear paths: an immediate hotfix and an architectural roadmap."
+      },
+      {
+        id: 3,
+        title: "3. Jira Hand-Off",
+        subtitle: "Ticket KAN-4",
+        badge: "Precision Spec",
+        badgeColor: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+        render: () => `
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded">KAN-4</span>
+                <span class="font-bold text-slate-200 text-sm md:text-base">[Playlab Ops] Teacher AI Quiz Generator — Timeout for Classrooms > 30 Students</span>
+              </div>
+              <span class="px-2 py-0.5 text-xs font-bold rounded bg-red-500/20 text-red-400 border border-red-500/30">Priority: HIGHEST</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4 text-xs text-slate-400 bg-slate-900 p-3 rounded border border-slate-800">
+              <div><strong>Status:</strong> <span class="text-sky-400 font-semibold">In Progress</span></div>
+              <div><strong>Assignee:</strong> <span class="text-slate-200">Sarah M. (Lead Eng)</span></div>
+              <div><strong>Labels:</strong> <span class="text-slate-300">#ai-app #educator-feedback #hotfix-candidate</span></div>
+              <div><strong>Reporter:</strong> <span class="text-slate-200">John DeVito</span></div>
+            </div>
+            <div class="bg-blue-950/40 border border-blue-800/50 p-3 rounded text-xs text-blue-200 leading-relaxed">
+              <strong>Official Jira Triage Comment Staged:</strong> Developer receives verified reproduction steps, client error payloads, and the exact proposed code fix. Zero developer hours wasted investigating.
+            </div>
+          </div>
+        `,
+        speakerNotes: "The ticket lands on the engineering sprint board as KAN-4 with Highest Priority. Sarah, the lead engineer, doesn't have to decipher what went wrong—she receives a clean specification and immediately creates her hotfix branch."
+      },
+      {
+        id: 4,
+        title: "4. Pre-Standup",
+        subtitle: "6:30 AM Briefing",
+        badge: "24/7 Resilience",
+        badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+        render: () => `
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">⚡ 5:00 AM Automated Cloud Sweeper (GitHub Actions)</span>
+              <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono">100% Offline Accessible</span>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col gap-3">
+              <div class="flex items-center justify-between text-sm font-bold text-slate-200">
+                <span>Executive Command Center Briefing</span>
+                <span class="text-xs text-slate-400">Reviewed at 6:30 AM CT</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div class="text-xl font-bold text-sky-400">4</div>
+                  <div class="text-[11px] text-slate-400 uppercase">Active Tickets</div>
+                </div>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div class="text-xl font-bold text-red-400">1</div>
+                  <div class="text-[11px] text-slate-400 uppercase">P1 Blocker</div>
+                </div>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                  <div class="text-xl font-bold text-emerald-400">100%</div>
+                  <div class="text-[11px] text-slate-400 uppercase">Triage Coverage</div>
+                </div>
+              </div>
+              <div class="text-xs text-slate-300 bg-slate-950 p-2.5 rounded border border-slate-800">
+                <strong>7:00 AM Standup Talking Points:</strong> Standup alignment pre-drafted. Blockers are highlighted, design dependencies flagged, and hiring debriefs scheduled before the West Coast even wakes up.
+              </div>
+            </div>
+          </div>
+        `,
+        speakerNotes: "At 5:00 AM, my automated background runner sweeps Jira and caches this briefing directly to disk. When I log on at 6:30 AM Central Time, I review the board over coffee with zero latency. By 7:00 AM standup, we are completely in control."
+      },
+      {
+        id: 5,
+        title: "5. The Inspector",
+        subtitle: "Staging UAT",
+        badge: "Quality Gate",
+        badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        render: () => `
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Staging Verification Harness (User Acceptance Testing)</span>
+              <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-mono">Status: IN REVIEW</span>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg flex flex-col gap-3">
+              <div class="flex items-center justify-between text-sm text-slate-200">
+                <span>Running Batch Roster Simulation: <strong>35 Student Profiles</strong></span>
+                <span class="text-emerald-400 font-mono text-xs">200 OK • Latency: 11.4s</span>
+              </div>
+              <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
+                <div class="bg-emerald-500 h-full rounded-full w-full"></div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                <div class="bg-slate-950 p-2 rounded">✓ Batch 1 (18 students): Complete (5.4s)</div>
+                <div class="bg-slate-950 p-2 rounded">✓ Batch 2 (17 students): Complete (6.0s)</div>
+              </div>
+            </div>
+            <div class="bg-emerald-950/40 border border-emerald-800/50 p-3 rounded text-xs text-emerald-200">
+              <strong>The Inspector Sign-off:</strong> The engineer deployed to staging; I verified with live classroom data. Zero regression, timeout eliminated, ready for production.
+            </div>
+          </div>
+        `,
+        speakerNotes: "Now I become the 'Inspector on the way out.' The developer pushed their hotfix to staging. I run acceptance testing with 35 student profiles. Both batches pass in 11 seconds. The engineer is already on to their next task while I sign off."
+      },
+      {
+        id: 6,
+        title: "6. Resolution",
+        subtitle: "Production Release",
+        badge: "Status: DONE",
+        badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+        render: () => `
+          <div class="flex flex-col items-center justify-center text-center gap-3 py-4">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center text-2xl font-bold">
+              ✓
+            </div>
+            <h2 class="text-xl font-bold text-white">Incident Resolved & Production Hotfix Live</h2>
+            <p class="text-sm text-slate-400 max-w-lg leading-relaxed">
+              Ticket <span class="text-sky-400 font-bold">KAN-4</span> transitioned to <span class="text-emerald-400 font-bold">DONE</span>. Educator support coordinators notified that full 30+ student generation is restored across all 4 pilot schools.
+            </p>
+            <div class="flex items-center gap-3 mt-2">
+              <span class="text-xs bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-slate-300">
+                ⏱ Total Cycle Time: 48 Minutes
+              </span>
+              <span class="text-xs bg-slate-900 border border-slate-800 px-3 py-1 rounded-full text-slate-300">
+                🛡 Zero Production Regressions
+              </span>
+            </div>
+          </div>
+        `,
+        speakerNotes: "Cycle closed. The ticket is marked Done in Jira, the pilot schools are back up and running, and the whole loop was executed in under an hour. That is the leverage I bring to Playlab."
+      }
+    ];
+
+    let currentStepIndex = 0;
+    let autoPlay = true;
+    let timer = null;
+    let progress = 0;
+    const stepDurationMs = 8000; // 8 seconds per slide
+    const tickIntervalMs = 100;
+
+    // Elements
+    const stepperContainer = document.getElementById('stepperContainer');
+    const stageContainer = document.getElementById('stageContainer');
+    const speakerNotes = document.getElementById('speakerNotes');
+    const stepCounter = document.getElementById('stepCounter');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const playIcon = document.getElementById('playIcon');
+    const playText = document.getElementById('playText');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+
+    // Build Stepper Buttons
+    function initStepper() {
+      stepperContainer.innerHTML = '';
+      steps.forEach((step, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `p-2 rounded-lg text-left border transition flex flex-col gap-0.5 ${
+          idx === currentStepIndex 
+            ? 'bg-slate-800 border-sky-500/80 shadow-md shadow-sky-500/10' 
+            : 'bg-slate-950/60 border-slate-800 hover:bg-slate-900'
+        }`;
+        btn.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-xs font-bold ${idx === currentStepIndex ? 'text-sky-400' : 'text-slate-400'}">${step.title}</span>
+            <span class="text-[10px] px-1 rounded ${step.badgeColor} hidden md:inline-block">${step.badge}</span>
+          </div>
+          <span class="text-[11px] text-slate-500 truncate">${step.subtitle}</span>
+        `;
+        btn.addEventListener('click', () => {
+          goToStep(idx);
+          pauseAutoPlay();
+        });
+        stepperContainer.appendChild(btn);
+      });
+    }
+
+    // Render Current Step
+    function renderStep() {
+      const step = steps[currentStepIndex];
+      stageContainer.innerHTML = `<div class="fade-enter">${step.render()}</div>`;
+      setTimeout(() => {
+        const child = stageContainer.querySelector('.fade-enter');
+        if (child) child.classList.add('fade-active');
+      }, 20);
+
+      speakerNotes.innerText = step.speakerNotes;
+      stepCounter.innerText = `Step ${currentStepIndex + 1} of ${steps.length}`;
+      initStepper();
+      progress = 0;
+      progressBar.style.width = '0%';
+    }
+
+    function goToStep(idx) {
+      currentStepIndex = (idx + steps.length) % steps.length;
+      renderStep();
+    }
+
+    function pauseAutoPlay() {
+      autoPlay = false;
+      playIcon.innerText = '▶';
+      playText.innerText = 'Resume Auto-Play';
+      clearInterval(timer);
+      timer = null;
+    }
+
+    function resumeAutoPlay() {
+      autoPlay = true;
+      playIcon.innerText = '⏸';
+      playText.innerText = 'Pause Auto-Play';
+      startTimer();
+    }
+
+    function startTimer() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(() => {
+        progress += (tickIntervalMs / stepDurationMs) * 100;
+        progressBar.style.width = `${Math.min(progress, 100)}%`;
+        if (progress >= 100) {
+          goToStep(currentStepIndex + 1);
+        }
+      }, tickIntervalMs);
+    }
+
+    // Event Listeners
+    playPauseBtn.addEventListener('click', () => {
+      if (autoPlay) pauseAutoPlay();
+      else resumeAutoPlay();
+    });
+
+    prevBtn.addEventListener('click', () => {
+      goToStep(currentStepIndex - 1);
+      pauseAutoPlay();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      goToStep(currentStepIndex + 1);
+      pauseAutoPlay();
+    });
+
+    // Start on load
+    renderStep();
+    startTimer();
+  </script>
+</body>
+</html>

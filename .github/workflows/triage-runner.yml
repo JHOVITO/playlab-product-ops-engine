@@ -1,0 +1,25 @@
+name: Triage Engine - Create & Diagnose Jira Ticket
+
+on:
+  workflow_dispatch: # Allows 1-click manual trigger from GitHub Actions
+
+jobs:
+  run-triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Execute Autonomous Intake, Ticket Creation & AI Triage
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY || 'KAN' }}
+        run: |
+          node src/triage-runner.js

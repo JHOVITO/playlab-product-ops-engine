@@ -24,12 +24,35 @@ async function runTriageSimulation() {
   console.log('⚡ PLAYLAB PRODUCT OPERATIONS: AUTOMATED INTAKE & TRIAGE');
   console.log('===========================================================\n');
 
-  // 1. Ingest raw educator feedback into structured Jira ticket
-  console.log('📦 Ingesting raw educator incident report into Jira...');
+  // 1. Resolve a valid Issue Type dynamically for this Jira project
+  console.log(`📡 Connecting to Jira Cloud at ${process.env.JIRA_BASE_URL}...`);
+  console.log(`🔍 Inspecting project settings for "${projectKey}"...`);
+
+  let issueTypeSelector = { name: 'Task' };
+  try {
+    const projectRes = await client.request(`/rest/api/3/project/${projectKey}`);
+    if (projectRes && projectRes.status === 200 && projectRes.data && projectRes.data.issueTypes) {
+      const standardTypes = projectRes.data.issueTypes.filter(t => !t.subtask);
+      const matched = standardTypes.find(t => /task/i.test(t.name))
+        || standardTypes.find(t => /story/i.test(t.name))
+        || standardTypes.find(t => /bug/i.test(t.name))
+        || standardTypes[0];
+      
+      if (matched) {
+        issueTypeSelector = { id: matched.id };
+        console.log(`✓ Detected Jira Issue Type: "${matched.name}" (ID: ${matched.id})`);
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Could not inspect project metadata, falling back to standard Task name:', err.message);
+  }
+
+  // 2. Ingest raw educator feedback into structured Jira ticket
+  console.log('\n📥 Ingesting raw educator incident report into Jira...');
   const newTicket = {
     project: { key: projectKey },
-    summary: '[Playlab Ops] Teacher AI Quiz Generator — Timeout on Step 3 for Classrooms > 30 Students',
-    issuetype: { id: '10008' }, // Task
+    summary: '[Playlab Ops] Teacher AI Quiz Generator - Timeout on Step 3 for Classrooms > 30 Students',
+    issuetype: issueTypeSelector,
     labels: ['educator-feedback', 'ai-app', 'product-ops', 'triage-needed'],
     description: client.textToAdf(
       'SOURCE: Educator Support Queue (Chicago Public Schools Pilot)\n\n' +
@@ -46,21 +69,22 @@ async function runTriageSimulation() {
 
   const createRes = await client.createIssue(newTicket);
   if (createRes.status !== 201) {
-    console.error('Failed to create issue:', createRes);
-    return;
+    console.error('❌ Failed to create issue in Jira. HTTP Status:', createRes.status);
+    console.error('Error Details:', JSON.stringify(createRes.data || createRes.raw, null, 2));
+    process.exit(1);
   }
 
   const issueKey = createRes.data.key;
-  console.log(`✅ Issue Created: ${issueKey}`);
-  console.log(`🔗 Link: ${process.env.JIRA_BASE_URL}/browse/${issueKey}\n`);
+  console.log(`✅ Issue Successfully Created in Jira: ${issueKey}`);
+  console.log(`🔗 Direct Ticket Link: ${process.env.JIRA_BASE_URL}/browse/${issueKey}\n`);
 
-  // 2. Autonomous Operational Triage & Engineering Recommendation
-  console.log(`🤖 Executing Operational Diagnosis for ${issueKey}...`);
+  // 3. Autonomous Operational Triage & Engineering Recommendation
+  console.log(`🔍 Executing Operational AI Diagnosis for ${issueKey}...`);
   const triageAnalysis = 
-    '⚡ [AI Product Ops Assistant — Automated Triage Analysis]\n\n' +
-    '• SEVERITY: HIGH (P1) — Actively blocking educator adoption during live classroom hours.\n' +
-    '• BLAST RADIUS: Limited to batch roster uploads (>25 students). Single-student and small group generation remains operational.\n' +
-    '• ROOT CAUSE HYPOTHESIS: Gateway timeout on synchronous API call to LLM worker. Lack of async job queuing for high-token prompt batches.\n\n' +
+    '⚡ [AI Product Ops Assistant - Automated Triage Analysis]\n\n' +
+    '  SEVERITY: HIGH (P1) - Actively blocking educator adoption during live classroom hours.\n' +
+    '  BLAST RADIUS: Limited to batch roster uploads (>25 students). Single-student and small group generation remains operational.\n' +
+    '  ROOT CAUSE HYPOTHESIS: Gateway timeout on synchronous API call to LLM worker. Lack of async job queuing for high-token prompt batches.\n\n' +
     'RECOMMENDED ENGINEERING SQUAD ACTIONS:\n' +
     '1. Immediate Mitigation: Add frontend chunking (split roster into 15-student batches in client worker).\n' +
     '2. Permanent Architecture: Transition quiz generation pipeline to async background task with Redis/BullMQ and WebSocket progress polling.\n' +
@@ -69,10 +93,15 @@ async function runTriageSimulation() {
 
   const commentRes = await client.addComment(issueKey, triageAnalysis);
   if (commentRes.status === 201) {
-    console.log(`✅ Triage Analysis & Action Items posted to ${issueKey} comments!`);
+    console.log(`✅ Triage Analysis & Action Items posted directly to ${issueKey} comments!`);
+  } else {
+    console.warn(`⚠️ Issue was created (${issueKey}), but comment failed with status ${commentRes.status}:`, commentRes.data);
   }
 
-  console.log('\n✨ Operational triage completed. Ticket staged for Engineering Sprint Queue.');
+  console.log('\n🎉 Operational triage complete! Ticket is staged for Engineering Sprint Queue in Jira.');
 }
 
-runTriageSimulation().catch(console.error);
+runTriageSimulation().catch(err => {
+  console.error('Fatal error running triage:', err);
+  process.exit(1);
+});
