@@ -60,6 +60,21 @@ class JiraClient {
     return this.request(`/rest/api/3/issue/${issueKeyOrId}/comment`, 'POST', { body });
   }
 
+  // Update issue fields (e.g. priority) and/or apply update operations (e.g. label add/remove)
+  updateIssue(issueKeyOrId, payload) {
+    return this.request(`/rest/api/3/issue/${issueKeyOrId}`, 'PUT', payload);
+  }
+
+  // List the workflow transitions available to an issue
+  getTransitions(issueKeyOrId) {
+    return this.request(`/rest/api/3/issue/${issueKeyOrId}/transitions`);
+  }
+
+  // Move an issue through a workflow transition
+  transitionIssue(issueKeyOrId, transitionId) {
+    return this.request(`/rest/api/3/issue/${issueKeyOrId}/transitions`, 'POST', { transition: { id: transitionId } });
+  }
+
   // Search issues via JQL
   search(jql, maxResults = 10) {
     const encodedJql = encodeURIComponent(jql);

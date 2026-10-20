@@ -16,7 +16,7 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const { analyzeTicket, formatTriageComment } = require('./claude-triage');
+const { analyzeTicket, formatTriageText, formatTriageAdf, triageFieldUpdates } = require('./claude-triage');
 
 const client = new JiraClient();
 const projectKey = process.env.JIRA_PROJECT_KEY || 'KAN';
@@ -41,8 +41,16 @@ if (!post) {
     return { status: 201, data: { key: `${projectKey}-DRYRUN` } };
   };
   client.addComment = async (issueKey, text) => {
-    console.log(`[dry-run] Would comment on ${issueKey}:\n${text}\n`);
+    console.log(`[dry-run] Would comment on ${issueKey}:\n${typeof text === 'string' ? text : '(formatted comment shown above)'}\n`);
     return { status: 201 };
+  };
+  client.updateIssue = async (issueKey, payload) => {
+    console.log(`[dry-run] Would update ${issueKey}:`, JSON.stringify(payload));
+    return { status: 204 };
+  };
+  client.transitionIssue = async (issueKey, transitionId) => {
+    console.log(`[dry-run] Would transition ${issueKey} (transition id ${transitionId})`);
+    return { status: 204 };
   };
 }
 
@@ -158,13 +166,47 @@ async function triageExistingIssue(key) {
   const { triage, model, usage } = await analyzeTicket(ticket);
   console.log(`✓ ${model} responded (${usage.input_tokens} input / ${usage.output_tokens} output tokens)\n`);
 
-  const comment = formatTriageComment(triage, model);
-  const commentRes = await client.addComment(key, comment);
+  console.log(formatTriageText(triage, model) + '\n');
+  const commentRes = await client.addComment(key, formatTriageAdf(triage, model));
   if (commentRes.status !== 201) {
     console.error(`❌ Comment failed with status ${commentRes.status}:`, commentRes.data);
     process.exit(1);
   }
-  console.log(post ? `✅ Triage posted as a comment on ${key}: ${process.env.JIRA_BASE_URL}/browse/${key}` : '✅ Dry run complete. Re-run with --post to add this comment in Jira.');
+  console.log(post ? `✅ Triage posted as a comment on ${key}` : '✓ (dry run) Comment above would be posted');
+
+  // Apply the triage to the ticket's fields: priority, labels, status
+  const updates = triageFieldUpdates(triage, ticket);
+  const updateRes = await client.updateIssue(key, {
+    ...(updates.priority && { fields: { priority: { name: updates.priority } } }),
+    update: { labels: [
+      ...updates.labelsToRemove.map(l => ({ remove: l })),
+      ...updates.labelsToAdd.map(l => ({ add: l }))
+    ] }
+  });
+  if (updateRes.status !== 204) {
+    console.warn(`⚠️ Field update failed with status ${updateRes.status}:`, updateRes.data || updateRes.raw);
+  } else {
+    console.log(`✓ Priority → ${updates.priority || 'unchanged (no description to assess)'}; labels +${updates.labelsToAdd.join(', +')} -${updates.labelsToRemove.join(', -')}`);
+  }
+
+  // Only move untriaged tickets forward; never pull work that's already in progress back to To Do
+  if (!updates.transitionTo) {
+    console.log(`✓ Status left at "${ticket.status}" (ticket needs more information before it can move forward)`);
+  } else if (ticket.status !== 'Idea') {
+    console.log(`✓ Status left at "${ticket.status}" (only tickets in "Idea" are moved to "${updates.transitionTo}")`);
+  } else {
+    const transRes = await client.getTransitions(key);
+    const transition = transRes.status === 200 && transRes.data.transitions.find(t => t.to.name === updates.transitionTo);
+    if (!transition) {
+      console.warn(`⚠️ No transition to "${updates.transitionTo}" available from "${ticket.status}"; status left unchanged.`);
+    } else {
+      const moveRes = await client.transitionIssue(key, transition.id);
+      if (moveRes.status === 204) console.log(`✓ Status ${ticket.status} → ${updates.transitionTo}`);
+      else console.warn(`⚠️ Status change failed with status ${moveRes.status}:`, moveRes.data || moveRes.raw);
+    }
+  }
+
+  console.log(post ? `\n✅ Done: ${process.env.JIRA_BASE_URL}/browse/${key}` : '\n✅ Dry run complete. Re-run with --post to apply these changes in Jira.');
 }
 
 (issueKey ? triageExistingIssue(issueKey) : runTriageSimulation()).catch(err => {
