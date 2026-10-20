@@ -16,5 +16,8 @@
     "edtech"
   ],
   "author": "John DeVito",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  }
 }

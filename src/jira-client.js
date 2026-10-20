@@ -71,6 +71,16 @@ class JiraClient {
     return this.request(`/rest/api/3/issue/${issueKeyOrId}?fields=${fields}`);
   }
 
+  // Utility to flatten an ADF document (e.g. an issue description) back to plain text
+  adfToText(node) {
+    if (!node) return '';
+    if (node.type === 'text') return node.text;
+    if (node.type === 'hardBreak') return '\n';
+    const inner = (node.content || []).map(n => this.adfToText(n)).join('');
+    const isBlock = ['paragraph', 'heading', 'listItem', 'codeBlock', 'blockquote'].includes(node.type);
+    return isBlock ? `${inner}\n` : inner;
+  }
+
   // Utility to convert text paragraphs to ADF
   textToAdf(text) {
     const paragraphs = text.split('\n\n').filter(p => p.trim());

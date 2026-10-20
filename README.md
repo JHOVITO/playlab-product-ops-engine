@@ -36,10 +36,11 @@ flowchart LR
 
 ## 2. Core Capabilities
 
-### 1. Autonomous Product Intake & Technical Triage
-* **Zero Guesswork for Developers:** Parses vague teacher feedback (*"the app froze on step 3"*) into precision technical bug reports.
-* **Automated Atlassian Document Format (ADF):** Generates structured Jira tickets with severity scoring (P0–P3), blast-radius calculation, reproduction flows, and architectural recommendations (e.g., frontend chunking vs. async queue migration).
-* **Live Jira Commenting:** Posts immediate technical triage notes directly to the Jira issue via REST API v3.
+### 1. Claude-Powered Ticket Triage
+* **Real Ticket Analysis:** `npm run triage -- --issue KAN-5` reads an existing Jira ticket (summary, status, priority, labels, description) and sends it to Claude (`claude-opus-5-5`).
+* **Structured Output:** Claude returns schema-validated JSON: severity (P0–P3) with rationale, category, blast radius, reproduction steps, root-cause hypothesis, recommended actions, and a list of missing information. It is instructed to say "unknown" rather than invent details the ticket doesn't contain.
+* **Safe by Default:** Runs as a dry run, printing the triage comment without touching Jira. Add `--post` to publish it as a comment on the ticket via REST API v3.
+* **Demo Mode:** Without `--issue`, the runner creates a sample ticket ("Quiz Generator timeout") with a pre-written triage comment. This content is a fixed demo scenario, not live AI output.
 
 ### 2. Pre-Standup Command Center (5:00 AM Cloud Runner)
 * **Automated Overnight Sweeps:** A scheduled runner (via GitHub Actions or local daemon) executes at **5:00 AM Central Time**, sweeping active sprint boards, blocker flags, and ticket deltas.
@@ -61,7 +62,8 @@ playlab-product-ops-engine/
 │       └── daily-briefing.yml   # Scheduled 5:00 AM cloud cron runner (GitHub Actions)
 ├── src/
 │   ├── jira-client.js           # Lightweight, zero-dependency Jira Cloud v3 wrapper
-│   ├── triage-runner.js         # Simulates educator intake & auto-posts technical diagnosis
+│   ├── triage-runner.js         # Claude triage of an existing ticket (--issue), or the sample-ticket demo
+│   ├── claude-triage.js         # Claude API call, triage JSON schema & comment formatting
 │   └── briefing-runner.js       # Sweeps board & compiles offline morning briefing
 ├── templates/
 │   └── morning_briefing.html    # Responsive dark-mode executive briefing dashboard
@@ -90,30 +92,36 @@ playlab-product-ops-engine/
 ### Prerequisites
 * Node.js v18+ (tested on Node v20/v25)
 * Atlassian Jira Cloud instance & API Token
+* Anthropic API key (for Claude triage; each run costs a few cents)
 
 ### Setup
-1. **Clone the repository:**
+1. **Clone the repository and install dependencies:**
    ```bash
    git clone https://github.com/your-username/playlab-product-ops-engine.git
    cd playlab-product-ops-engine
+   npm install
    ```
 
 2. **Configure Environment Variables:**
    ```bash
    cp .env.example .env
    ```
-   Add your Atlassian credentials to `.env`:
+   Add your credentials to `.env`:
    ```env
    JIRA_BASE_URL=https://your-domain.atlassian.net
    JIRA_EMAIL=your-email@example.com
    JIRA_API_TOKEN=your_atlassian_api_token
-   JIRA_PROJECT_KEY=OPS
+   JIRA_PROJECT_KEY=KAN
+   ANTHROPIC_API_KEY=your_anthropic_api_key
    ```
+   `JIRA_PROJECT_KEY` is the prefix on your ticket numbers (e.g. `KAN-1`); find it under **Projects → View all projects** in Jira.
 
-3. **Run the Triage Engine Simulation:**
+3. **Triage an existing ticket with Claude:**
    ```bash
-   npm run triage
+   npm run triage -- --issue KAN-5          # dry run: prints the triage, writes nothing
+   npm run triage -- --issue KAN-5 --post   # posts the triage as a comment on KAN-5
    ```
+   Without `--issue`, `npm run triage` runs the sample-ticket demo (also a dry run unless `--post` is given).
 
 4. **Generate the Morning Executive Briefing:**
    ```bash
